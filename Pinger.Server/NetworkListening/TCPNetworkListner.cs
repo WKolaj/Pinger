@@ -71,26 +71,21 @@ namespace Pinger.Server.NetworkListening
                 {
                     using (var clientStreamReader = new StreamReader(streamWithClient))
                     using (var clientStreamWriter = new StreamWriter(streamWithClient))
-                    {
-                        while (!token.IsCancellationRequested)
-                        {
-                            _logger.LogInformation($"Waiting for data form client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
+					{
+						_logger.LogInformation($"Waiting for data form client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
 
-                            var data = await clientStreamReader.ReadLineAsync().ConfigureAwait(false);
+						while (!token.IsCancellationRequested && client.Connected)
+						{
+							var data = await WaitForNewDataFromClient(clientStreamReader);
 
-                            if (data != null)
-                            {
-                                _logger.LogInformation($"New Data from client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
+							_logger.LogInformation($"New Data from client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
 
-                                await onIncomingData(data, clientStreamWriter);
-                            }
-                            else
-                            {
-                                _logger.LogWarning($"Recieved empty data from {infoAboutClient?.Address}");
-                            }
-                        }
+							await onIncomingData(data, clientStreamWriter);
 
-                        _logger.LogInformation($"Closing connection with client '{infoAboutClient?.Address}' on Port '{infoAboutClient?.Port}'");
+							_logger.LogInformation($"Waiting for data form client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
+						}
+
+						_logger.LogInformation($"Closing connection with client '{infoAboutClient?.Address}' on Port '{infoAboutClient?.Port}'");
                     }
                 }
             }
@@ -103,5 +98,19 @@ namespace Pinger.Server.NetworkListening
                 _logger.LogInformation($"Connection closed with client '{infoAboutClient?.Address}' on Port '{infoAboutClient?.Port}'");
             }
         }
-    }
+
+		private static async Task<string> WaitForNewDataFromClient(StreamReader clientStreamReader)
+		{
+			string? data = null;
+
+			while (data == null)
+			{
+				data = await clientStreamReader.ReadLineAsync().ConfigureAwait(false);
+
+				await Task.Delay(100);
+			}
+
+			return data;
+		}
+	}
 }
