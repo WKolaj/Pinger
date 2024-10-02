@@ -3,10 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pinger.Common;
 using Pinger.Common.Configurations;
+using Pinger.Server.Networking;
 using Pinger.Server.NetworkListening;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -43,9 +45,11 @@ namespace Pinger.Server
 			await StartListening(listener);
 		}
 
-		private async Task StartListening(INetworkListener listner)
+		private async Task StartListening(INetworkListener listener)
 		{
-			await listner.StartListening(OnIncomingData, CancellationToken.None);
+			await listener.StartListening(OnIncomingData, CancellationToken.None);
+
+			this.Logger.LogInformation($"Started listening on address '{listener.Address}' and port '{listener.Port}'");
 		}
 
 		private INetworkListener CreateListener(IServiceProvider serviceProvider, ServerConfig serverConfig)
@@ -81,16 +85,16 @@ namespace Pinger.Server
 			Protocols.Validate(serverConfig.Protocol);
 		}
 
-		private async Task OnIncomingData(string incomingData, StreamWriter clientStreamWriter)
+		private async Task OnIncomingData(ClientInfo clientInfo, string incomingData, NetworkStream streamToClient)
 		{
-			this.Logger.LogInformation(incomingData);
+			this.Logger.LogInformation($"[{clientInfo}]:{incomingData}");
 
-			this.Logger.LogInformation($"Sending message '{TestMessageToClient}' back to client");
+			this.Logger.LogInformation($"Sending message '{TestMessageToClient}' to client");
 
-			await clientStreamWriter.WriteLineAsync(incomingData);
-			await clientStreamWriter.FlushAsync();
+			var bytes = Encoding.UTF8.GetBytes(TestMessageToClient);
 
-			this.Logger.LogInformation($"Message send back to client successfully!");
+			await streamToClient.WriteAsync(bytes, 0, bytes.Length);
+			await streamToClient.FlushAsync();
 		}
 
 	}

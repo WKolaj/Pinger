@@ -47,7 +47,7 @@ namespace Pinger.Client
 
 					var message = await GetMessageFromServer(client);
 
-					this.Logger.LogInformation(message);
+					this.Logger.LogInformation($"[{client.ServerInfo}]:{message}");
 
 					await WaitMiliseconds(1000);
 				}
@@ -89,6 +89,8 @@ namespace Pinger.Client
 
 		private async Task SendMessageToServer(INetworkClient client, string message)
 		{
+			this.Logger.LogInformation($"Sending message '{message}' to client '{client.ServerInfo}'");
+
 			await client.SendMessage(message);
 		}
 

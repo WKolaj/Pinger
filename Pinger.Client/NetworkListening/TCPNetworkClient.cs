@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Pinger.Server.Networking;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -12,56 +13,67 @@ namespace Pinger.Client.NetworkListening
 	public class TCPNetworkClient : INetworkClient
 	{
 		private readonly ILogger<TCPNetworkClient> _logger;
-		private readonly string _serverIpAddress;
-		private readonly int _serverPort;
+
+		public string Address { get; }
+		public int Port { get; }
+
+		public ClientInfo ServerInfo { get; }
 
 		private TcpClient? _tcpClient = null;
 		private NetworkStream? _networkStream = null;
-		
+
 		public TCPNetworkClient(
 			ILogger<TCPNetworkClient> logger,
-			string serverIpAddress, 
+			string serverIpAddress,
 			int serverPort)
 		{
 			this._logger = logger;
-			this._serverIpAddress = serverIpAddress;
-			this._serverPort = serverPort;
+			this.Address = serverIpAddress;
+			this.Port = serverPort;
+			this.ServerInfo = new ClientInfo(serverIpAddress, serverPort);
 		}
 
-		public async Task Start()
+		public Task Start()
 		{
 			EnsureClientNotStarted();
 
 			try
 			{
-				this._logger.LogInformation($"Staring client.");
+				this._logger.LogTrace($"Staring client.");
 
-				var client = new TcpClient();
+				this._logger.LogTrace($"Trying to connect to '{this.ServerInfo}'");
 
-				this._logger.LogInformation($"Trying to connect to '{_serverIpAddress}' on Port '{_serverPort}'");
+				var client = new TcpClient(Address, Port);
 
-				await client.ConnectAsync(_serverIpAddress, _serverPort);
+				this._logger.LogTrace($"Client connected to '{this.ServerInfo}'");
 
 				this._tcpClient = client;
 				this._networkStream = client.GetStream();
 
-				this._logger.LogInformation($"Client connected to '{_serverIpAddress}' on Port '{_serverPort}'");
 			}
 			catch (Exception ex)
 			{
-				this._logger.LogError(ex, $"Error when connection to '{_serverIpAddress}' on Port '{_serverPort}'");
+				this._logger.LogError(ex, $"Error when connection to '{this.ServerInfo}'");
+
+				throw;
 			}
+
+			return Task.CompletedTask;
 		}
 
 		public Task Stop()
 		{
 			EnsureClientStarted(this._tcpClient);
 
-			this._logger.LogInformation($"Closing connection with '{_serverIpAddress}' on Port '{_serverPort}'");
+			this._logger.LogTrace($"Closing connection with '{this.ServerInfo}'");
 
+			this._networkStream?.Close();
 			this._tcpClient.Close();
 
-			this._logger.LogInformation($"Connection closed with '{_serverIpAddress}' on Port '{_serverPort}'");
+			this._networkStream = null;
+			this._tcpClient = null;
+
+			this._logger.LogTrace($"Connection closed with '{this.ServerInfo}'");
 
 			return Task.CompletedTask;
 		}
@@ -70,41 +82,41 @@ namespace Pinger.Client.NetworkListening
 		{
 			EnsureClientStarted(this._tcpClient);
 
-			this._logger.LogInformation($"Sending message '{message}' to '{_serverIpAddress}' on Port '{_serverPort}'");
+			this._logger.LogTrace($"Sending message '{message}' to '{this.ServerInfo}'");
 
-			using (var serverStreamWriter = new StreamWriter(this._networkStream!))
-			{
-				await serverStreamWriter.WriteAsync(message);
-				await serverStreamWriter.FlushAsync();
-			}
+			var bytes = Encoding.UTF8.GetBytes(message);
 
-			this._logger.LogInformation($"Message '{message}' send successfully to '{_serverIpAddress}' on Port '{_serverPort}'");
+			await this._networkStream!.WriteAsync(bytes, 0, bytes.Length);
+
+			this._logger.LogTrace($"Message '{message}' send successfully to '{this.ServerInfo}'");
 		}
 
 		public async Task<string?> WaitForMessageFromServer()
 		{
 			EnsureClientStarted(this._tcpClient);
 
-			this._logger.LogInformation($"Waiting for message from '{_serverIpAddress}' connected on Port '{_serverPort}'");
+			this._logger.LogTrace($"Waiting for message from '{this.ServerInfo}'");
 
-			using (var serverStreamReader = new StreamReader(this._networkStream!))
-			{
-				var message = await serverStreamReader.ReadLineAsync();
+			byte[] buffer = new byte[this._tcpClient.ReceiveBufferSize];
 
-				this._logger.LogInformation($"Message from '{_serverIpAddress}' connected on Port '{_serverPort}' recieved");
+			int bytesRead = await this._networkStream!.ReadAsync(buffer, 0, this._tcpClient.ReceiveBufferSize);
 
-				return message;
-			}
+			var message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+			this._logger.LogTrace($"Message from '{this.ServerInfo}' recieved");
+
+			return message;
 		}
 
 
 		public void Dispose()
 		{
-			this._logger.LogInformation($"Clearning resources of connection to '{_serverIpAddress}' connected on Port '{_serverPort}'");
+			this._logger.LogTrace($"Clearning resources of connection to '{this.ServerInfo}'");
 
+			this._networkStream?.Dispose();
 			this._tcpClient?.Dispose();
 
-			this._logger.LogInformation($"Resources of connection to '{_serverIpAddress}' connected on Port '{_serverPort}' cleared.");
+			this._logger.LogTrace($"Resources of connection to '{this.ServerInfo}' cleared.");
 
 		}
 
@@ -118,9 +130,6 @@ namespace Pinger.Client.NetworkListening
 		{
 			if (client == null)
 				throw new InvalidOperationException("Client has not been started!");
-
-			if (client.Connected == false)
-				throw new InvalidOperationException("Client has not been connected!");
 		}
 	}
 }

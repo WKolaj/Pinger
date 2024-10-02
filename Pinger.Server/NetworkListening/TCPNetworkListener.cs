@@ -6,118 +6,123 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using System.IO;
+using Pinger.Server.Networking;
 
 namespace Pinger.Server.NetworkListening
 {
-    public class TCPNetworkListener : INetworkListener
-    {
-        private readonly ILogger<TCPNetworkListener> _logger;
-        private int _port;
-        private IPAddress _ipAddress;
+	public class TCPNetworkListener : INetworkListener
+	{
+		private readonly ILogger<TCPNetworkListener> _logger;
 
-        public TCPNetworkListener(ILogger<TCPNetworkListener> logger, int port) :
-            this(logger, port, IPAddress.Any)
-        {
+		public int Port { get; }
+		public IPAddress Address { get; }
 
-        }
+		public TCPNetworkListener(ILogger<TCPNetworkListener> logger, int port) :
+			this(logger, port, IPAddress.Any)
+		{
 
-        public TCPNetworkListener(ILogger<TCPNetworkListener> logger, int port, IPAddress ipAddress)
-        {
-            _logger = logger;
-            _port = port;
-            _ipAddress = ipAddress;
-        }
+		}
 
-        public async Task StartListening(Func<string, StreamWriter, Task> onIncomingData, CancellationToken token)
-        {
-            using (var server = new TcpListener(_ipAddress, _port))
-            {
-                _logger.LogInformation($"Starting TCP listining on '{_ipAddress}' on Port '{_port}'");
+		public TCPNetworkListener(ILogger<TCPNetworkListener> logger, int port, IPAddress ipAddress)
+		{
+			_logger = logger;
+			Port = port;
+			Address = ipAddress;
+		}
 
-                server.Start();
+		public async Task StartListening(Func<ClientInfo, string, NetworkStream, Task> onIncomingData, CancellationToken token)
+		{
+			var serverInfo = new ClientInfo(Address.ToString(), Port);
 
-                _logger.LogInformation($"Listening TCP started on '{_ipAddress}' on Port '{_port}'");
+			using (var server = new TcpListener(Address, Port))
+			{
+				_logger.LogTrace($"Starting TCP listining on '{serverInfo}'");
 
-                while (!token.IsCancellationRequested)
+				server.Start();
+
+				_logger.LogTrace($"Listening TCP started on '{serverInfo}'");
+
+				while (!token.IsCancellationRequested)
 				{
-					_logger.LogInformation($"Waiting for new clients to connect...");
+					_logger.LogTrace($"Waiting for new clients to connect...");
 
 					TcpClient client = await WaitForClientToConnect(server);
 
-					_logger.LogInformation($"New client connected.");
+					_logger.LogTrace($"New client connected.");
 
 					Task.Run(() => HandleClient(client, onIncomingData, token));
 				}
 
-				_logger.LogInformation($"Stopping TCP listining on '{_ipAddress}' on Port '{_port}'");
+				_logger.LogTrace($"Stopping TCP listening on '{serverInfo}'");
 
-                server.Stop();
+				server.Stop();
 
-                _logger.LogInformation($"TCP listening stopped '{_ipAddress}' on Port '{_port}'");
-            }
+				_logger.LogTrace($"TCP listening stopped '{serverInfo}'");
+			}
 
-            _logger.LogInformation($"TCP server closed '{_ipAddress}' on Port '{_port}'");
-        }
+			_logger.LogTrace($"TCP server closed '{serverInfo}'");
+		}
 
 		private static async Task<TcpClient> WaitForClientToConnect(TcpListener server)
 		{
 			return await server.AcceptTcpClientAsync().ConfigureAwait(false);
 		}
 
-		private async Task HandleClient(TcpClient client, Func<string, StreamWriter, Task> onIncomingData, CancellationToken token)
-        {
-            try
-            {
-                var infoAboutClient = client.Client.RemoteEndPoint as IPEndPoint;
+		private async Task HandleClient(TcpClient client, Func<ClientInfo, string, NetworkStream, Task> onIncomingData, CancellationToken token)
+		{
+			try
+			{
+				var clientInfo = new ClientInfo(client.Client.RemoteEndPoint!);
 
-                _logger.LogInformation($"Connected with client '{infoAboutClient?.Address}' on Port '{infoAboutClient?.Port}'");
+				_logger.LogTrace($"Connected with client '{clientInfo}'");
 
-                using (var streamWithClient = client.GetStream())
-                {
-                    using (var clientStreamReader = new StreamReader(streamWithClient))
-                    using (var clientStreamWriter = new StreamWriter(streamWithClient))
+				using (var streamWithClient = client.GetStream())
+				{
+					_logger.LogTrace($"Waiting for data form client '{clientInfo}'");
+
+					while (!token.IsCancellationRequested && client.Connected)
 					{
-						_logger.LogInformation($"Waiting for data form client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
+						var data = await WaitForNewDataFromTheClient(client, streamWithClient, token);
 
-						while (!token.IsCancellationRequested && client.Connected)
+						if (data != null)
 						{
-							var data = await WaitForNewDataFromTheClient(clientStreamReader, token);
+							_logger.LogTrace($"New Data from client '{clientInfo}'");
 
-							if(data != null)
-							{
-								_logger.LogInformation($"New Data from client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
+							await onIncomingData(clientInfo, data, streamWithClient);
 
-								await onIncomingData(data, clientStreamWriter);
-
-								_logger.LogInformation($"Waiting for data form client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
-							}
+							_logger.LogTrace($"Waiting for data form client '{clientInfo}'");
 						}
+					}
 
-						_logger.LogInformation($"Closing connection with client '{infoAboutClient?.Address}' on Port '{infoAboutClient?.Port}'");
-                    }
-                }
-            }
-			catch(Exception ex)
+					_logger.LogTrace($"Closing connection with client '{clientInfo}'");
+				}
+			}
+			catch (Exception ex)
 			{
 				this._logger.LogError(ex, "An exception occured during reading for the client");
 			}
-            finally
-            {
-                var infoAboutClient = client.Client.RemoteEndPoint as IPEndPoint;
+			finally
+			{
+				var infoAboutClient = client.Client.RemoteEndPoint as IPEndPoint;
 
-                client.Dispose();
+				client.Dispose();
 
-                _logger.LogInformation($"Connection closed with client '{infoAboutClient?.Address}' on Port '{infoAboutClient?.Port}'");
-            }
-        }
+				_logger.LogTrace($"Connection closed with client '{infoAboutClient?.Address}' on Port '{infoAboutClient?.Port}'");
+			}
+		}
 
-		private static async Task<string?> WaitForNewDataFromTheClient(StreamReader clientStreamReader, CancellationToken token)
+		private static async Task<string?> WaitForNewDataFromTheClient(TcpClient client, NetworkStream clientStream, CancellationToken token)
 		{
 			string? data = null;
 
 			while (data == null && !token.IsCancellationRequested)
 			{
-				data = await clientStreamReader.ReadLineAsync().ConfigureAwait(false);
+				byte[] buffer = new byte[client.ReceiveBufferSize];
+
+				int bytesRead = await clientStream.ReadAsync(buffer, 0, client.ReceiveBufferSize);
+
+				data = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
 				await Task.Delay(100);
 			}
