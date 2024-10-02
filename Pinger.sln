@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35219.272
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pinger.Client", "Pinger.Client\Pinger.Client.csproj", "{004FB5C2-E1E7-4870-813A-A13E4740BD8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pinger.Server", "Pinger.Server\Pinger.Server.csproj", "{160030DA-5139-4FC4-A63F-BE02B043B3FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pinger.Common", "Pinger.Common\Pinger.Common.csproj", "{17C93EB0-2457-419E-B9D4-5070C5A9E147}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{004FB5C2-E1E7-4870-813A-A13E4740BD8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{004FB5C2-E1E7-4870-813A-A13E4740BD8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{004FB5C2-E1E7-4870-813A-A13E4740BD8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{004FB5C2-E1E7-4870-813A-A13E4740BD8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{160030DA-5139-4FC4-A63F-BE02B043B3FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{160030DA-5139-4FC4-A63F-BE02B043B3FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{160030DA-5139-4FC4-A63F-BE02B043B3FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{160030DA-5139-4FC4-A63F-BE02B043B3FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17C93EB0-2457-419E-B9D4-5070C5A9E147}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17C93EB0-2457-419E-B9D4-5070C5A9E147}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17C93EB0-2457-419E-B9D4-5070C5A9E147}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17C93EB0-2457-419E-B9D4-5070C5A9E147}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4D03EFAD-C263-42F2-85A6-13B0A2E0967F}
+	EndGlobalSection
+EndGlobal
