@@ -39,17 +39,17 @@ namespace Pinger.Server.NetworkListening
                 _logger.LogInformation($"Listening TCP started on '{_ipAddress}' on Port '{_port}'");
 
                 while (!token.IsCancellationRequested)
-                {
-                    _logger.LogInformation($"Waiting for new clients to connect...");
+				{
+					_logger.LogInformation($"Waiting for new clients to connect...");
 
-                    var client = await server.AcceptTcpClientAsync().ConfigureAwait(false);
+					TcpClient client = await WaitForClientToConnect(server);
 
-                    _logger.LogInformation($"New client connected.");
+					_logger.LogInformation($"New client connected.");
 
-                    Task.Run(() => HandleClient(client, onIncomingData, token));
-                }
+					Task.Run(() => HandleClient(client, onIncomingData, token));
+				}
 
-                _logger.LogInformation($"Stopping TCP listining on '{_ipAddress}' on Port '{_port}'");
+				_logger.LogInformation($"Stopping TCP listining on '{_ipAddress}' on Port '{_port}'");
 
                 server.Stop();
 
@@ -59,7 +59,12 @@ namespace Pinger.Server.NetworkListening
             _logger.LogInformation($"TCP server closed '{_ipAddress}' on Port '{_port}'");
         }
 
-        private async Task HandleClient(TcpClient client, Func<string, StreamWriter, Task> onIncomingData, CancellationToken token)
+		private static async Task<TcpClient> WaitForClientToConnect(TcpListener server)
+		{
+			return await server.AcceptTcpClientAsync().ConfigureAwait(false);
+		}
+
+		private async Task HandleClient(TcpClient client, Func<string, StreamWriter, Task> onIncomingData, CancellationToken token)
         {
             try
             {
@@ -76,7 +81,7 @@ namespace Pinger.Server.NetworkListening
 
 						while (!token.IsCancellationRequested && client.Connected)
 						{
-							var data = await WaitForNewDataFromClient(clientStreamReader);
+							var data = await WaitForNewDataFromTheClient(clientStreamReader);
 
 							_logger.LogInformation($"New Data from client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
 
@@ -99,7 +104,7 @@ namespace Pinger.Server.NetworkListening
             }
         }
 
-		private static async Task<string> WaitForNewDataFromClient(StreamReader clientStreamReader)
+		private static async Task<string> WaitForNewDataFromTheClient(StreamReader clientStreamReader)
 		{
 			string? data = null;
 
