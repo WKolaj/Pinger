@@ -81,19 +81,26 @@ namespace Pinger.Server.NetworkListening
 
 						while (!token.IsCancellationRequested && client.Connected)
 						{
-							var data = await WaitForNewDataFromTheClient(clientStreamReader);
+							var data = await WaitForNewDataFromTheClient(clientStreamReader, token);
 
-							_logger.LogInformation($"New Data from client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
+							if(data != null)
+							{
+								_logger.LogInformation($"New Data from client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
 
-							await onIncomingData(data, clientStreamWriter);
+								await onIncomingData(data, clientStreamWriter);
 
-							_logger.LogInformation($"Waiting for data form client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
+								_logger.LogInformation($"Waiting for data form client '{infoAboutClient?.Address}' on Port {infoAboutClient?.Port}");
+							}
 						}
 
 						_logger.LogInformation($"Closing connection with client '{infoAboutClient?.Address}' on Port '{infoAboutClient?.Port}'");
                     }
                 }
             }
+			catch(Exception ex)
+			{
+				this._logger.LogError(ex, "An exception occured during reading for the client");
+			}
             finally
             {
                 var infoAboutClient = client.Client.RemoteEndPoint as IPEndPoint;
@@ -104,11 +111,11 @@ namespace Pinger.Server.NetworkListening
             }
         }
 
-		private static async Task<string> WaitForNewDataFromTheClient(StreamReader clientStreamReader)
+		private static async Task<string?> WaitForNewDataFromTheClient(StreamReader clientStreamReader, CancellationToken token)
 		{
 			string? data = null;
 
-			while (data == null)
+			while (data == null && !token.IsCancellationRequested)
 			{
 				data = await clientStreamReader.ReadLineAsync().ConfigureAwait(false);
 
