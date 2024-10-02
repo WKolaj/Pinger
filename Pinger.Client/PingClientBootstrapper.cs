@@ -43,9 +43,11 @@ namespace Pinger.Client
 
 			using(var client = CreateClient(serviceProvider, clientConfig))
 			{
+				this.Logger.LogInformation($"Trying to connect to server: '{client.ServerInfo}'");
+
 				await client.Start();
 
-				this.Logger.LogInformation($"Starting communcation with server '{client.ServerInfo}'");
+				this.Logger.LogInformation($"Connection to server established: '{client.ServerInfo}'");
 
 				while (true)
 				{
