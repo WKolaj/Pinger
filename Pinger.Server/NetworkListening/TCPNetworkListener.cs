@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using System.IO;
 using Pinger.Server.Networking;
+using Pinger.Common.Networking;
 
 namespace Pinger.Server.NetworkListening
 {
@@ -118,11 +119,7 @@ namespace Pinger.Server.NetworkListening
 
 			while (data == null && !token.IsCancellationRequested)
 			{
-				byte[] buffer = new byte[client.ReceiveBufferSize];
-
-				int bytesRead = await clientStream.ReadAsync(buffer, 0, client.ReceiveBufferSize);
-
-				data = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+				data = await clientStream.ReadMessageFromStream(client.ReceiveBufferSize);
 
 				await Task.Delay(100);
 			}

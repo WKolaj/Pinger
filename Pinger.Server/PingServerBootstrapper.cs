@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pinger.Common;
 using Pinger.Common.Configurations;
+using Pinger.Common.Networking;
 using Pinger.Server.Networking;
 using Pinger.Server.NetworkListening;
 using System;
@@ -19,7 +20,7 @@ namespace Pinger.Server
 		private IServiceProvider ServiceProvider = null!;
 		private ILogger<PingServerBootstrapper> Logger = null!;
 
-		const string TestMessageToClient = "Test Message To Client";
+		const string TestMessageToClient = "Test Message From Server";
 
 		public void ConfigureServices(IServiceCollection services)
 		{
@@ -94,10 +95,7 @@ namespace Pinger.Server
 
 			this.Logger.LogInformation($"Sending message '{TestMessageToClient}' to client");
 
-			var bytes = Encoding.UTF8.GetBytes(TestMessageToClient);
-
-			await streamToClient.WriteAsync(bytes, 0, bytes.Length);
-			await streamToClient.FlushAsync();
+			await streamToClient.FlushMessageToStream(TestMessageToClient);
 		}
 
 	}

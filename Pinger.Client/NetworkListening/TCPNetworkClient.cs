@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Pinger.Common.Networking;
 using Pinger.Server.Networking;
 using System;
 using System.Collections.Generic;
@@ -84,9 +85,7 @@ namespace Pinger.Client.NetworkListening
 
 			this._logger.LogTrace($"Sending message '{message}' to '{this.ServerInfo}'");
 
-			var bytes = Encoding.UTF8.GetBytes(message);
-
-			await this._networkStream!.WriteAsync(bytes, 0, bytes.Length);
+			await this._networkStream!.FlushMessageToStream(message);
 
 			this._logger.LogTrace($"Message '{message}' send successfully to '{this.ServerInfo}'");
 		}
@@ -97,11 +96,7 @@ namespace Pinger.Client.NetworkListening
 
 			this._logger.LogTrace($"Waiting for message from '{this.ServerInfo}'");
 
-			byte[] buffer = new byte[this._tcpClient.ReceiveBufferSize];
-
-			int bytesRead = await this._networkStream!.ReadAsync(buffer, 0, this._tcpClient.ReceiveBufferSize);
-
-			var message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+			var message = await this._networkStream!.ReadMessageFromStream(this._tcpClient.ReceiveBufferSize);
 
 			this._logger.LogTrace($"Message from '{this.ServerInfo}' recieved");
 

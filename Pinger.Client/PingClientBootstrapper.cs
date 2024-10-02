@@ -17,7 +17,7 @@ namespace Pinger.Client
 		private IServiceProvider ServiceProvider = null!;
 		private ILogger<PingClientBootstrapper> Logger = null!;
 
-		private const string MessageToServerContent = "Test Message To Server";
+		private const string MessageToServerContent = "Test Message From Client";
 
 		public void ConfigureServices(IServiceCollection services)
 		{
@@ -53,7 +53,7 @@ namespace Pinger.Client
 
 					this.Logger.LogInformation($"[{client.ServerInfo}]:{message}");
 
-					await WaitMiliseconds(1000);
+					await WaitMiliseconds(5000);
 				}
 			}
 		}
