@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,8 @@ namespace Pinger.Common.Configurations
 {
 	public interface IConfigProvider
 	{
+		IConfiguration Configuration { get; }
+
 		Task<TSection> GetAppConfigAsync<TSection>(string? sectionName = null);
 	}
 }

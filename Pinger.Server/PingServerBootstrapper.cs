@@ -23,10 +23,13 @@ namespace Pinger.Server
 
 		public void ConfigureServices(IServiceCollection services)
 		{
-			services.AddLogging(
-				options => options.AddConsole());
+			var configProvider = services.AddConfiguration();
 
-			services.AddConfiguration();
+			services.AddLogging(
+				options =>
+					options
+						.AddConfiguration(configProvider.Configuration.GetSection("Logging"))
+						.AddConsole());
 
 			services.AddScoped<INetworkListenerFactory, NetworkListenerFactory>();
 		}

@@ -4,23 +4,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Pinger.Common.Configurations
 {
 	internal class ConfigProvider : IConfigProvider
 	{
+		public IConfiguration Configuration { get; }
+
 		private const string appSettingsFileName = "appsettings.json";
 
-		public Task<TSection> GetAppConfigAsync<TSection>(string? sectionName = null)
+		public ConfigProvider()
 		{
 			var builder = new ConfigurationBuilder();
 
 			builder.SetBasePath(Directory.GetCurrentDirectory())
 				   .AddJsonFile(appSettingsFileName, optional: false, reloadOnChange: true);
 
-			var nameOfConfigSection = sectionName ?? typeof(TSection).Name;
+			this.Configuration = builder.Build();
+		}
 
-			IConfiguration config = builder.Build();
+		public Task<TSection> GetAppConfigAsync<TSection>(string? sectionName = null)
+		{
+			IConfiguration config = Configuration;
+
+			var nameOfConfigSection = sectionName ?? typeof(TSection).Name;
 
 			var section = config.GetRequiredSection(nameOfConfigSection).Get<TSection>();
 

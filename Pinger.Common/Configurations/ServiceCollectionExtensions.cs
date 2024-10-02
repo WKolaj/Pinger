@@ -9,9 +9,13 @@ namespace Pinger.Common.Configurations
 {
 	public static class ServiceCollectionExtensions
 	{
-		public static void AddConfiguration(this IServiceCollection serviceCollection)
+		public static IConfigProvider AddConfiguration(this IServiceCollection serviceCollection)
 		{
-			serviceCollection.AddScoped<IConfigProvider, ConfigProvider>();
+			var configurationProvider = new ConfigProvider();
+
+			serviceCollection.AddSingleton<IConfigProvider>(configurationProvider);
+
+			return configurationProvider;
 		}
 	}
 }
