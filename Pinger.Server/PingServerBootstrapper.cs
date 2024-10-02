@@ -15,6 +15,9 @@ namespace Pinger.Server
 	internal class PingServerBootstrapper
 	{
 		private IServiceProvider ServiceProvider = null!;
+		private ILogger<PingServerBootstrapper> Logger = null!;
+
+		const string TestMessageToClient = "Test Message To Client";
 
 		public void ConfigureServices(IServiceCollection services)
 		{
@@ -23,40 +26,45 @@ namespace Pinger.Server
 
 			services.AddConfiguration();
 
-			services.AddScoped<INetworkListnerFactory, NetworkListnerFactory>();
+			services.AddScoped<INetworkListenerFactory, NetworkListenerFactory>();
 		}
 
 		public async Task Run(IServiceProvider serviceProvider, object[] args)
 		{
 			AssignServiceProvider(serviceProvider);
+			AssignLogger(serviceProvider);
 
 			var serverConfig = await GetServerConfig(serviceProvider);
 
 			ValideServerConfig(serverConfig);
 
-			var listner = CreateListner(serviceProvider, serverConfig);
+			var listener = CreateListener(serviceProvider, serverConfig);
 
-			await StartListening(listner);
-
+			await StartListening(listener);
 		}
 
-		private async Task StartListening(INetworkListner listner)
+		private async Task StartListening(INetworkListener listner)
 		{
 			await listner.StartListening(OnIncomingData, CancellationToken.None);
 		}
 
-		private INetworkListner CreateListner(IServiceProvider serviceProvider, ServerConfig serverConfig)
+		private INetworkListener CreateListener(IServiceProvider serviceProvider, ServerConfig serverConfig)
 		{
-			var factory = this.ServiceProvider.GetRequiredService<INetworkListnerFactory>();
+			var factory = this.ServiceProvider.GetRequiredService<INetworkListenerFactory>();
 
-			var listner = factory.CreateNetworkListner(serverConfig.Protocol, serverConfig.Port, serverConfig.IPAddress);
+			var listener = factory.CreateNetworkListener(serverConfig.Protocol, serverConfig.Port, serverConfig.IPAddress);
 
-			return listner;
+			return listener;
 		}
 
 		private void AssignServiceProvider(IServiceProvider serviceProvider)
 		{
 			this.ServiceProvider = serviceProvider;
+		}
+
+		private void AssignLogger(IServiceProvider serviceProvider)
+		{
+			this.Logger = serviceProvider.GetRequiredService<ILogger<PingServerBootstrapper>>();
 		}
 
 		private static async Task<ServerConfig> GetServerConfig(IServiceProvider serviceProvider)
@@ -73,11 +81,16 @@ namespace Pinger.Server
 			Protocols.Validate(serverConfig.Protocol);
 		}
 
-		private Task OnIncomingData(string incomingData, StreamWriter clientStreamWriter)
+		private async Task OnIncomingData(string incomingData, StreamWriter clientStreamWriter)
 		{
-            Console.WriteLine(incomingData);
+			this.Logger.LogInformation(incomingData);
 
-			return Task.CompletedTask;
+			this.Logger.LogInformation($"Sending message '{TestMessageToClient}' back to client");
+
+			await clientStreamWriter.WriteLineAsync(incomingData);
+			await clientStreamWriter.FlushAsync();
+
+			this.Logger.LogInformation($"Message send back to client successfully!");
 		}
 
 	}

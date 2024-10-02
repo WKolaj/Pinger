@@ -9,19 +9,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Pinger.Server.NetworkListening
 {
-    public class TCPNetworkListner : INetworkListner
+    public class TCPNetworkListener : INetworkListener
     {
-        private readonly ILogger<TCPNetworkListner> _logger;
+        private readonly ILogger<TCPNetworkListener> _logger;
         private int _port;
         private IPAddress _ipAddress;
 
-        public TCPNetworkListner(ILogger<TCPNetworkListner> logger, int port) :
+        public TCPNetworkListener(ILogger<TCPNetworkListener> logger, int port) :
             this(logger, port, IPAddress.Any)
         {
 
         }
 
-        public TCPNetworkListner(ILogger<TCPNetworkListner> logger, int port, IPAddress ipAddress)
+        public TCPNetworkListener(ILogger<TCPNetworkListener> logger, int port, IPAddress ipAddress)
         {
             _logger = logger;
             _port = port;

@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Pinger.Server.NetworkListening
 {
-    public interface INetworkListnerFactory
-    {
-		public INetworkListner CreateNetworkListner(string protocol, int port, string? ipAddress = null);
+    public interface INetworkListener
+	{
+        Task StartListening(Func<string, StreamWriter, Task> onIncomingData, CancellationToken token);
     }
 }

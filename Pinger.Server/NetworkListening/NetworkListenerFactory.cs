@@ -9,17 +9,17 @@ using System.Threading.Tasks;
 
 namespace Pinger.Server.NetworkListening
 {
-	public class NetworkListnerFactory : INetworkListnerFactory
+	public class NetworkListenerFactory : INetworkListenerFactory
 	{
-		private readonly ILogger<TCPNetworkListner> _tcpListnerlogger;
+		private readonly ILogger<TCPNetworkListener> _tcpListnerlogger;
 
-		public NetworkListnerFactory(
-			ILogger<TCPNetworkListner> tcpListnerlogger)
+		public NetworkListenerFactory(
+			ILogger<TCPNetworkListener> tcpListnerlogger)
 		{
 			this._tcpListnerlogger = tcpListnerlogger;
 		}
 
-		public INetworkListner CreateNetworkListner(
+		public INetworkListener CreateNetworkListener(
 			string protocol, int port, string? ipAddress = null)
 		{
 			Protocols.Validate(protocol);
@@ -28,7 +28,7 @@ namespace Pinger.Server.NetworkListening
 
 			if (protocol == Protocols.TCP)
 			{
-				return new TCPNetworkListner(this._tcpListnerlogger, port, serverAddress);
+				return new TCPNetworkListener(this._tcpListnerlogger, port, serverAddress);
 			}
 
 			throw new ArgumentException($"Listner for protocol '{nameof(protocol)}' not found!");
