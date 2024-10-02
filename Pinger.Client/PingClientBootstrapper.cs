@@ -45,15 +45,17 @@ namespace Pinger.Client
 			{
 				await client.Start();
 
+				this.Logger.LogInformation($"Starting communcation with server '{client.ServerInfo}'");
+
 				while (true)
 				{
 					await SendMessageToServer(client, MessageToServerContent);
 
 					var message = await GetMessageFromServer(client);
 
-					this.Logger.LogInformation($"[{client.ServerInfo}]:{message}");
+					this.Logger.LogInformation($"Response from server '{client.ServerInfo}': {message}");
 
-					await WaitMiliseconds(5000);
+					await WaitMiliseconds(clientConfig.TimeBetweenSendingMessages);
 				}
 			}
 		}
@@ -93,14 +95,32 @@ namespace Pinger.Client
 
 		private async Task SendMessageToServer(INetworkClient client, string message)
 		{
-			this.Logger.LogInformation($"Sending message '{message}' to client '{client.ServerInfo}'");
+			try
+			{
+				this.Logger.LogInformation($"Sending message '{message}' to server '{client.ServerInfo}'");
 
-			await client.SendMessage(message);
+				await client.SendMessage(message);
+			}
+			catch (Exception ex)
+			{
+				this.Logger.LogError(ex, "Exception during sending message to client");
+			}
 		}
 
 		private async Task<string?> GetMessageFromServer(INetworkClient client)
 		{
-			return await client.WaitForMessageFromServer();
+			try
+			{
+				this.Logger.LogInformation($"Waiting for response from server '{client.ServerInfo}'");
+
+				return await client.WaitForMessageFromServer();
+			}
+			catch (Exception ex)
+			{
+				this.Logger.LogError(ex, "Exception during reading message from server");
+
+				return null;
+			}
 		}
 
 		private static async Task WaitMiliseconds(int miliseconds)

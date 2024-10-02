@@ -51,9 +51,9 @@ namespace Pinger.Server
 
 		private async Task StartListening(INetworkListener listener)
 		{
-			await listener.StartListening(OnIncomingData, CancellationToken.None);
+			this.Logger.LogInformation($"Starting listening on address '{new ClientInfo(listener.Address.ToString(), listener.Port)}'");
 
-			this.Logger.LogInformation($"Started listening on address '{listener.Address}' and port '{listener.Port}'");
+			await listener.StartListening(OnIncomingData, CancellationToken.None);
 		}
 
 		private INetworkListener CreateListener(IServiceProvider serviceProvider, ServerConfig serverConfig)
@@ -91,11 +91,18 @@ namespace Pinger.Server
 
 		private async Task OnIncomingData(ClientInfo clientInfo, string incomingData, NetworkStream streamToClient)
 		{
-			this.Logger.LogInformation($"[{clientInfo}]:{incomingData}");
+			this.Logger.LogInformation($"Message from client '{clientInfo}': '{incomingData}'");
 
-			this.Logger.LogInformation($"Sending message '{TestMessageToClient}' to client");
+			try
+			{
+				this.Logger.LogInformation($"Sending message back to client: '{TestMessageToClient}'");
 
-			await streamToClient.FlushMessageToStream(TestMessageToClient);
+				await streamToClient.FlushMessageToStream(TestMessageToClient);
+			}
+			catch (Exception ex)
+			{
+				this.Logger.LogError(ex, "Exception during sending message to client");
+			}
 		}
 
 	}

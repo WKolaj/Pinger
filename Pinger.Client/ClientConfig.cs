@@ -15,5 +15,7 @@ namespace Pinger.Client
 		public string ServerAddress { get; set; } = String.Empty;
 
 		public string Protocol { get; set; } = String.Empty;
+
+		public int TimeBetweenSendingMessages { get; set; } = 10000;
 	}
 }
