@@ -11,7 +11,16 @@ and execute *Pinger.Client* on the machine that is supposed to be a communicatio
 Every configured interval, *Pinger.Client* sends a dummy request to the *Ping.Server*.
 When *Pinger.Server* gets such request, it responds to the *Pinger.Client* with another dummy request.
 
-![Communication flow](./Documents/CommunicationFlow.svg)
+```mermaid
+sequenceDiagram
+Pinger.Server->Pinger.Server: Wait for a Client
+Pinger.Client->Pinger.Server: Connect to Server
+Pinger.Client->Pinger.Server: Test Message From Client
+Pinger.Server->Pinger.Client: Test Message From Server
+Pinger.Client->Pinger.Client: Wait configured interval
+Pinger.Client->Pinger.Server: Test Message From Client
+Pinger.Server->Pinger.Client: Test Message From Server
+```
 
 ## Usage
 You can configure parameters invoked by this application in two ways:
