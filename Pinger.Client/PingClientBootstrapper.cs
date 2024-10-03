@@ -39,6 +39,8 @@ namespace Pinger.Client
 
 			var clientConfig = await GetClientConfig(serviceProvider);
 
+			OverwriteConfigWithCmdArguments(clientConfig, args);
+
 			ValideClientConfig(clientConfig);
 
 			using(var client = CreateClient(serviceProvider, clientConfig))
@@ -81,10 +83,72 @@ namespace Pinger.Client
 			return clientConfig;
 		}
 
+		private void OverwriteConfigWithCmdArguments(ClientConfig clientConfig, object[] args)
+		{
+			if (args.Length <= 0)
+				return;
+
+			if(args.Length > 0)
+			{
+				var arg0 = args[0].ToString();
+
+				if (String.IsNullOrWhiteSpace(arg0) == false)
+				{
+					if (TextContainsIpAndPort(arg0))
+					{
+						clientConfig.ServerAddress = GetIp(arg0);
+						clientConfig.ServerPort = GetPort(arg0);
+					}
+					else
+					{
+						clientConfig.ServerAddress = arg0;
+					}
+				}
+			}
+
+			if (args.Length > 1)
+			{
+				var arg1 = args[1].ToString();
+
+				if (String.IsNullOrWhiteSpace(arg1) == false)
+				{
+					clientConfig.TimeBetweenSendingMessages = Int32.Parse(arg1);
+				}
+			}
+
+			if (args.Length > 2)
+			{
+				var arg2 = args[2].ToString();
+
+				if (String.IsNullOrWhiteSpace(arg2) == false)
+				{
+					clientConfig.Protocol = arg2;
+				}
+			}
+		}
+
+		private bool TextContainsIpAndPort(string argument)
+		{
+			return argument.Contains(":");
+		}
+
+		private string GetIp(string argument)
+		{
+			return argument.Split(":").First();
+		}
+
+		private int GetPort(string argument)
+		{
+			var portText = argument.Split(":").Skip(1).First();
+
+			return Int32.Parse(portText);
+		}
+
 		private void ValideClientConfig(ClientConfig clientConfig)
 		{
 			Protocols.Validate(clientConfig.Protocol);
 		}
+
 
 		private INetworkClient CreateClient(IServiceProvider serviceProvider, ClientConfig clientConfig)
 		{

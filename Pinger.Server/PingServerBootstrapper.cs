@@ -42,6 +42,8 @@ namespace Pinger.Server
 
 			var serverConfig = await GetServerConfig(serviceProvider);
 
+			OverwriteConfigWithCmdArguments(serverConfig, args);
+
 			ValideServerConfig(serverConfig);
 
 			var listener = CreateListener(serviceProvider, serverConfig);
@@ -82,6 +84,42 @@ namespace Pinger.Server
 			var serverConfig = await configProvider.GetAppConfigAsync<ServerConfig>(ServerConfig.SectionName);
 
 			return serverConfig;
+		}
+
+		private void OverwriteConfigWithCmdArguments(ServerConfig serverConfig, object[] args)
+		{
+			if (args.Length <= 0)
+				return;
+
+			if (args.Length > 0)
+			{
+				var arg0 = args[0].ToString();
+
+				if (String.IsNullOrWhiteSpace(arg0) == false)
+				{
+					serverConfig.Port = Int32.Parse(arg0);
+				}
+			}
+
+			if (args.Length > 1)
+			{
+				var arg1 = args[1].ToString();
+
+				if (String.IsNullOrWhiteSpace(arg1) == false)
+				{
+					serverConfig.IPAddress = arg1;
+				}
+			}
+
+			if (args.Length > 2)
+			{
+				var arg2 = args[2].ToString();
+
+				if (String.IsNullOrWhiteSpace(arg2) == false)
+				{
+					serverConfig.Protocol = arg2;
+				}
+			}
 		}
 
 		private void ValideServerConfig(ServerConfig serverConfig)
